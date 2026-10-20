@@ -1,73 +1,180 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Ofertas | Pentihum Digital</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Ofertas y servicios</title>
+
+  <!-- Bootstrap 5 -->
   <link
     href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
     rel="stylesheet"
-    integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
-    crossorigin="anonymous"
-  />
+  >
+
   <style>
-    .offer-img {
-      height: 200px;
-      object-fit: cover;
-      background-color: #f1f3f5;
+    body {
+      background-color: #f5f7fb;
+      min-height: 100vh;
+    }
+
+    .navbar-brand {
+      font-weight: 700;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #17366b, #3867b5);
+      color: white;
+      padding: 3rem 0;
+    }
+
+    .offer-card {
+      height: 100%;
+      border: none;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+      transition: transform 0.2s ease;
+    }
+
+    .offer-card:hover {
+      transform: translateY(-4px);
+    }
+
+    .offer-image {
+      width: 100%;
+      height: 220px;
+      object-fit: contain;
+      padding: 12px;
+      background-color: white;
+    }
+
+    .offer-price {
+      color: #244a8f;
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+
+    .user-name {
+      color: #fff;
+      font-size: 0.9rem;
+      overflow-wrap: anywhere;
+    }
+
+    footer {
+      color: #667085;
     }
   </style>
 </head>
-<body class="bg-light">
 
-  <!-- Navbar -->
+<body>
+
+  <!-- Navegación -->
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container">
-      <span class="navbar-brand">Pentihum Digital</span>
-      <div class="ms-auto d-flex align-items-center gap-3">
-        <span id="userName" class="text-white-50 small d-none"></span>
-        <button id="loginBtn" class="btn btn-outline-light btn-sm" type="button">Iniciar sesión con Google</button>
-        <button id="logoutBtn" class="btn btn-outline-warning btn-sm d-none" type="button">Cerrar sesión</button>
+
+      <a class="navbar-brand" href="./">
+        Servicios
+      </a>
+
+      <div class="d-flex align-items-center gap-2 ms-auto flex-wrap">
+
+        <span
+          id="userName"
+          class="user-name d-none"
+          aria-live="polite"
+        ></span>
+
+        <button
+          id="signInButton"
+          class="btn btn-outline-light btn-sm"
+          type="button"
+        >
+          Iniciar sesión con Google
+        </button>
+
+        <button
+          id="signOutButton"
+          class="btn btn-warning btn-sm d-none"
+          type="button"
+        >
+          Cerrar sesión
+        </button>
+
       </div>
     </div>
   </nav>
 
-  <main class="container py-4">
-    <h1 class="h3 mb-3">Ofertas</h1>
-
-    <!-- Mensajes de estado -->
-    <div id="statusArea">
-      <div id="msgAuth" class="alert alert-info">
-        Inicia sesión con Google para ver las ofertas disponibles.
-      </div>
-      <div id="msgLoading" class="alert alert-secondary d-none">
-        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-        Cargando ofertas…
-      </div>
-      <div id="msgEmpty" class="alert alert-warning d-none">
-        No hay ofertas disponibles en este momento.
-      </div>
-      <div id="msgError" class="alert alert-danger d-none"></div>
+  <!-- Encabezado -->
+  <header class="hero">
+    <div class="container">
+      <h1 class="display-5 fw-bold">Ofertas</h1>
+      <p class="lead mb-0">
+        Conocé nuestros servicios y las ofertas disponibles.
+      </p>
     </div>
+  </header>
 
-    <!-- Grid de ofertas -->
-    <div id="offersGrid" class="row g-4"></div>
+  <!-- Contenido principal -->
+  <main class="container py-5">
+
+    <section aria-labelledby="offersHeading">
+
+      <div class="mb-4">
+        <h2 id="offersHeading" class="h3">
+          Ofertas disponibles
+        </h2>
+
+        <p class="text-secondary">
+          Iniciá sesión para consultar las ofertas vigentes.
+        </p>
+      </div>
+
+      <!-- Estado de la aplicación -->
+      <div
+        id="status"
+        class="alert alert-info"
+        role="status"
+        aria-live="polite"
+      >
+        Iniciá sesión con Google para cargar las ofertas.
+      </div>
+
+      <!-- Tarjetas de ofertas -->
+      <div
+        id="offersGrid"
+        class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4"
+      ></div>
+
+    </section>
+
   </main>
 
+  <footer class="container py-4 text-center small">
+    Información de ofertas y servicios.
+  </footer>
+
+  <!-- Firebase SDK modular, sin herramientas de compilación -->
   <script type="module">
-    // ============================================================
-    // 1. Firebase (SDK modular vía CDN, compatible con HTML estático)
-    // ============================================================
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+    import {
+      initializeApp
+    } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+
     import {
       getAuth,
       GoogleAuthProvider,
       signInWithPopup,
       signOut,
       onAuthStateChanged
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 
-    // Configuración web de Firebase proporcionada por el usuario.
+
+    // =====================================================
+    // 1. CONFIGURACIÓN DE FIREBASE
+    // =====================================================
+
     const firebaseConfig = {
       apiKey: "AIzaSyCtxAZwG9rxY7Gya518ahYSUH_LorOnNPw",
       authDomain: "pentihum-digital.firebaseapp.com",
@@ -77,241 +184,453 @@
       appId: "1:692387438680:web:de661bf6635b861ccf6a2d"
     };
 
-    // URL del servicio Apps Script (termina en /exec).
+
+    // =====================================================
+    // 2. URL DEL SERVICIO GOOGLE APPS SCRIPT
+    // =====================================================
+
     const APPS_SCRIPT_URL =
       "https://script.google.com/macros/s/AKfycbzHqqcXAur_4YaAxdQoG461_7fl7-u1Kid2eI9hSfB71a3FA2ZV8uXSn9QMveNZMSaOmA/exec";
 
-    const app  = initializeApp(firebaseConfig);
+
+    // =====================================================
+    // 3. INICIALIZACIÓN DE FIREBASE AUTHENTICATION
+    // =====================================================
+
+    const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
 
-    // Proveedor Google: forzar selector de cuentas SIEMPRE.
-    const provider = new GoogleAuthProvider();
-    provider.setCustomParameters({ prompt: "select_account" });
+    const googleProvider = new GoogleAuthProvider();
 
-    // ============================================================
-    // 2. Referencias DOM
-    // ============================================================
-    const loginBtn   = document.getElementById("loginBtn");
-    const logoutBtn  = document.getElementById("logoutBtn");
-    const userNameEl = document.getElementById("userName");
+    // Solicita elegir una cuenta de Google cada vez
+    // que se inicia un nuevo proceso de inicio de sesión.
+    googleProvider.setCustomParameters({
+      prompt: "select_account"
+    });
 
-    const msgAuth    = document.getElementById("msgAuth");
-    const msgLoading = document.getElementById("msgLoading");
-    const msgEmpty   = document.getElementById("msgEmpty");
-    const msgError   = document.getElementById("msgError");
-    const offersGrid = document.getElementById("offersGrid");
 
-    // ============================================================
-    // 3. Utilidades de UI
-    // ============================================================
-    function hideAllMessages() {
-      msgAuth.classList.add("d-none");
-      msgLoading.classList.add("d-none");
-      msgEmpty.classList.add("d-none");
-      msgError.classList.add("d-none");
-      msgError.textContent = "";
+    // =====================================================
+    // 4. ELEMENTOS DEL DOCUMENTO
+    // =====================================================
+
+    const signInButton =
+      document.getElementById("signInButton");
+
+    const signOutButton =
+      document.getElementById("signOutButton");
+
+    const userName =
+      document.getElementById("userName");
+
+    const statusBox =
+      document.getElementById("status");
+
+    const offersGrid =
+      document.getElementById("offersGrid");
+
+
+    // Identifica cada solicitud para impedir que una
+    // respuesta anterior restaure ofertas tras cerrar sesión.
+    let requestGeneration = 0;
+
+
+    // =====================================================
+    // 5. FUNCIONES DE INTERFAZ
+    // =====================================================
+
+    function setStatus(message, type = "info") {
+      statusBox.className = `alert alert-${type}`;
+      statusBox.textContent = message;
+      statusBox.classList.remove("d-none");
     }
 
-    function showMessage(el, text) {
-      hideAllMessages();
-      if (text !== undefined && text !== null) el.textContent = text;
-      el.classList.remove("d-none");
-    }
 
     function clearOffers() {
-      offersGrid.innerHTML = "";
+      offersGrid.replaceChildren();
     }
 
-    function escapeHtml(str) {
-      return String(str == null ? "" : str)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#39;");
-    }
 
-    // Construye el HTML de una tarjeta. Respeta los nombres exactos
-    // devueltos por Apps Script: Nombre, Precio, Descripcion, Imagen.
-    // Si un campo requerido no existe, no se pinta tarjeta con "undefined".
-    function buildOfferCard(offer) {
-      if (!offer || typeof offer !== "object") return null;
+    function showSignedOutState() {
+      requestGeneration++;
 
-      const nombre      = offer.Nombre;
-      const precio      = offer.Precio;
-      const descripcion = offer.Descripcion;
-      const imagen      = offer.Imagen;
-
-      // Nombre es obligatorio para renderizar; sin él, descartamos.
-      if (nombre === undefined || nombre === null || String(nombre).trim() === "") {
-        return null;
-      }
-
-      const col = document.createElement("div");
-      col.className = "col-12 col-sm-6 col-lg-4";
-
-      // Imagen: ruta relativa a index.html. Si viene vacía, no pintamos <img>.
-      let imgHtml = "";
-      if (imagen !== undefined && imagen !== null && String(imagen).trim() !== "") {
-        imgHtml = `
-          <img
-            src="${escapeHtml(imagen)}"
-            class="card-img-top offer-img"
-            alt="${escapeHtml(nombre)}"
-            loading="lazy"
-            onerror="this.style.display='none'"
-          />`;
-      }
-
-      col.innerHTML = `
-        <div class="card h-100 shadow-sm">
-          ${imgHtml}
-          <div class="card-body d-flex flex-column">
-            <h5 class="card-title">${escapeHtml(nombre)}</h5>
-            <p class="card-text text-muted flex-grow-1">${escapeHtml(descripcion)}</p>
-            <p class="card-text fw-bold fs-5 text-success mb-0">${escapeHtml(precio)}</p>
-          </div>
-        </div>
-      `;
-      return col;
-    }
-
-    // ============================================================
-    // 4. Carga de ofertas desde Apps Script
-    // ============================================================
-    async function loadOffers(user) {
       clearOffers();
-      showMessage(msgLoading);
+
+      userName.textContent = "";
+      userName.classList.add("d-none");
+
+      signOutButton.classList.add("d-none");
+
+      signInButton.classList.remove("d-none");
+      signInButton.disabled = false;
+
+      setStatus(
+        "Iniciá sesión con Google para consultar las ofertas.",
+        "info"
+      );
+    }
+
+
+    // =====================================================
+    // 6. CREACIÓN DE TARJETAS
+    // =====================================================
+
+    function displayOffers(offers) {
+      clearOffers();
+
+      if (offers.length === 0) {
+        setStatus(
+          "En este momento no hay ofertas disponibles.",
+          "secondary"
+        );
+        return;
+      }
+
+      const fragment = document.createDocumentFragment();
+
+      for (const offer of offers) {
+
+        // Los nombres de las propiedades deben coincidir
+        // exactamente con la respuesta real de Apps Script.
+        const requiredFields = [
+          "Nombre",
+          "Precio",
+          "Descripcion",
+          "Imagen"
+        ];
+
+        const validOffer =
+          offer !== null &&
+          typeof offer === "object" &&
+          !Array.isArray(offer) &&
+          requiredFields.every(field =>
+            Object.prototype.hasOwnProperty.call(offer, field) &&
+            offer[field] !== null &&
+            offer[field] !== undefined &&
+            String(offer[field]).trim() !== ""
+          );
+
+        // No mostrar tarjetas incompletas ni valores undefined.
+        if (!validOffer) {
+          clearOffers();
+
+          setStatus(
+            "La respuesta del servicio contiene una oferta " +
+            "incompleta. Se esperaban los campos Nombre, Precio, " +
+            "Descripcion e Imagen. No se mostraron las tarjetas.",
+            "danger"
+          );
+
+          return;
+        }
+
+        const column = document.createElement("div");
+        column.className = "col";
+
+        const card = document.createElement("article");
+        card.className = "card offer-card";
+
+        // Imagen del producto o servicio.
+        const image = document.createElement("img");
+
+        image.className = "offer-image";
+        image.alt = `Imagen de ${String(offer.Nombre)}`;
+        image.loading = "lazy";
+
+        // La ruta se interpreta respecto de index.html.
+        // Ejemplo:
+        // multimedia/imagenesproductos/producto1.jpg
+        image.src = String(offer.Imagen).trim();
+
+        image.addEventListener("error", () => {
+          image.alt = "No se pudo cargar la imagen.";
+          image.classList.add("d-none");
+        }, { once: true });
+
+        // Contenido de la tarjeta.
+        const body = document.createElement("div");
+
+        body.className =
+          "card-body d-flex flex-column";
+
+        const title = document.createElement("h3");
+
+        title.className = "card-title h5";
+        title.textContent = String(offer.Nombre);
+
+        const price = document.createElement("p");
+
+        price.className = "offer-price mb-2";
+        price.textContent = String(offer.Precio);
+
+        const description = document.createElement("p");
+
+        description.className =
+          "card-text text-secondary mb-0";
+
+        description.textContent =
+          String(offer.Descripcion);
+
+        body.append(title, price, description);
+
+        card.append(image, body);
+        column.append(card);
+
+        fragment.append(column);
+      }
+
+      offersGrid.append(fragment);
+
+      setStatus(
+        `Se cargaron ${offers.length} ` +
+        `${offers.length === 1 ? "oferta" : "ofertas"} correctamente.`,
+        "success"
+      );
+    }
+
+
+    // =====================================================
+    // 7. CONSULTA DE OFERTAS A APPS SCRIPT
+    // =====================================================
+
+    async function loadOffers(user) {
+      const generation = ++requestGeneration;
+
+      clearOffers();
+
+      setStatus("Cargando ofertas…", "info");
 
       try {
-        // Obtener ID token de Firebase.
+
+        // Obtener el ID token del usuario autenticado.
         const idToken = await user.getIdToken();
 
-        // Apps Script espera el token como query string ?token=...
-        // GET sencillo, sin headers personalizados, sin credentials:
-        // evita preflight CORS y permite seguir el 302 de Apps Script.
-        const url = APPS_SCRIPT_URL + "?token=" + encodeURIComponent(idToken);
+        // Cancelar lógicamente si la sesión cambió.
+        if (
+          generation !== requestGeneration ||
+          !auth.currentUser ||
+          auth.currentUser.uid !== user.uid
+        ) {
+          return;
+        }
 
-        const res = await fetch(url, {
+        // El servicio existente recibe el token por GET:
+        // doGet(e) -> e.parameter.token
+        const url = new URL(APPS_SCRIPT_URL);
+
+        url.searchParams.set("token", idToken);
+
+        const response = await fetch(url.toString(), {
           method: "GET",
+          headers: {
+            "Accept": "application/json"
+          },
           redirect: "follow",
-          credentials: "omit"
+          cache: "no-store"
         });
 
-        // Apps Script ContentService siempre devuelve HTTP 200,
-        // incluso en errores lógicos. Por eso leemos el texto y
-        // decidimos según la forma del JSON, no según res.status.
-        const text = await res.text();
+        const responseText = await response.text();
+
+        if (
+          generation !== requestGeneration ||
+          !auth.currentUser ||
+          auth.currentUser.uid !== user.uid
+        ) {
+          return;
+        }
 
         let data;
+
         try {
-          data = JSON.parse(text);
-        } catch (parseErr) {
-          showMessage(
-            msgError,
-            "La respuesta del servidor no es JSON válido. Revisa la URL del servicio y su implementación."
+          data = JSON.parse(responseText);
+        } catch {
+          throw new Error(
+            "El servicio no devolvió JSON válido. " +
+            "Verificá la URL de implementación y la respuesta de Apps Script."
           );
-          return;
         }
 
-        // Caso error: objeto con propiedad "error".
-        if (data && !Array.isArray(data) && typeof data === "object" && data.error) {
-          showMessage(msgError, "Error del servidor: " + data.error);
-          return;
+        // Apps Script devuelve objetos { error: "..." }
+        // cuando falla la validación o la lectura de la hoja.
+        if (
+          data !== null &&
+          typeof data === "object" &&
+          !Array.isArray(data) &&
+          data.error
+        ) {
+          throw new Error(String(data.error));
         }
 
-        // Caso éxito: array de ofertas.
+        // La respuesta correcta debe ser un array JSON.
         if (!Array.isArray(data)) {
-          showMessage(
-            msgError,
-            "Estructura de respuesta inesperada. Se esperaba un array de ofertas o un objeto con 'error'."
+          throw new Error(
+            "Formato de respuesta inesperado. " +
+            "Se esperaba un array JSON de ofertas."
           );
+        }
+
+        displayOffers(data);
+
+      } catch (error) {
+
+        if (
+          generation !== requestGeneration ||
+          !auth.currentUser ||
+          auth.currentUser.uid !== user.uid
+        ) {
           return;
         }
 
-        if (data.length === 0) {
-          showMessage(msgEmpty);
-          return;
+        clearOffers();
+
+        let message;
+
+        if (error instanceof TypeError) {
+          message =
+            "No se pudo leer la respuesta de Google Apps Script. " +
+            "Verificá la conexión, las redirecciones y la consola " +
+            "del navegador para determinar si existe una restricción " +
+            "de comunicación entre dominios.";
+        } else {
+          message = error?.message ||
+            "Ocurrió un error inesperado.";
         }
 
-        // Renderizar tarjetas.
-        let rendered = 0;
-        const frag = document.createDocumentFragment();
-        for (const offer of data) {
-          const card = buildOfferCard(offer);
-          if (card) {
-            frag.appendChild(card);
-            rendered++;
-          }
-        }
+        setStatus(
+          `No se pudieron cargar las ofertas. ${message}`,
+          "danger"
+        );
 
-        if (rendered === 0) {
-          showMessage(
-            msgError,
-            "El servidor devolvió ofertas pero ninguna contiene los campos esperados (Nombre, Precio, Descripcion, Imagen)."
-          );
-          return;
-        }
-
-        hideAllMessages();
-        offersGrid.appendChild(frag);
-      } catch (err) {
-        showMessage(
-          msgError,
-          "No se pudieron cargar las ofertas. Detalle: " + (err && err.message ? err.message : String(err))
+        console.error(
+          "Error al cargar las ofertas:",
+          error
         );
       }
     }
 
-    // ============================================================
-    // 5. Autenticación
-    // ============================================================
-    loginBtn.addEventListener("click", async () => {
+
+    // =====================================================
+    // 8. INICIAR SESIÓN CON GOOGLE
+    // =====================================================
+
+    signInButton.addEventListener("click", async () => {
+      signInButton.disabled = true;
+
       try {
-        await signInWithPopup(auth, provider);
-      } catch (err) {
-        // Cancelaciones del usuario no son errores graves.
-        if (err && err.code === "auth/popup-closed-by-user") return;
-        showMessage(msgError, "Error al iniciar sesión: " + (err && err.message ? err.message : String(err)));
+
+        await signInWithPopup(auth, googleProvider);
+
+        // onAuthStateChanged se encargará de actualizar
+        // la interfaz y solicitar las ofertas.
+
+      } catch (error) {
+
+        let message;
+
+        if (error?.code === "auth/popup-closed-by-user") {
+          message =
+            "Se cerró la ventana antes de completar el inicio de sesión.";
+
+        } else if (error?.code === "auth/unauthorized-domain") {
+          message =
+            "El dominio de GitHub Pages no está autorizado en Firebase. " +
+            "Agregalo en Authentication, Configuración y Dominios autorizados.";
+
+        } else {
+          message =
+            error?.message ||
+            "No se pudo iniciar sesión con Google.";
+        }
+
+        setStatus(message, "danger");
+
+        console.error(
+          "Error de inicio de sesión:",
+          error
+        );
+
+      } finally {
+
+        if (!auth.currentUser) {
+          signInButton.disabled = false;
+        }
       }
     });
 
-    logoutBtn.addEventListener("click", async () => {
+
+    // =====================================================
+    // 9. CERRAR SESIÓN
+    // =====================================================
+
+    signOutButton.addEventListener("click", async () => {
+
+      // Eliminar las ofertas inmediatamente, antes de
+      // esperar la finalización del cierre de sesión.
+      requestGeneration++;
+
+      clearOffers();
+
+      setStatus("Cerrando sesión…", "info");
+
+      signOutButton.disabled = true;
+
       try {
+
         await signOut(auth);
-      } catch (err) {
-        showMessage(msgError, "Error al cerrar sesión: " + (err && err.message ? err.message : String(err)));
+
+        // onAuthStateChanged actualizará el resto de la interfaz.
+
+      } catch (error) {
+
+        setStatus(
+          "No se pudo cerrar la sesión: " +
+          (error?.message || "error desconocido"),
+          "danger"
+        );
+
+        console.error(
+          "Error al cerrar sesión:",
+          error
+        );
+
+      } finally {
+
+        signOutButton.disabled = false;
       }
     });
 
-    // Observador de estado de autenticación.
-    onAuthStateChanged(auth, (user) => {
+
+    // =====================================================
+    // 10. DETECTAR EL ESTADO DE AUTENTICACIÓN
+    // =====================================================
+
+    onAuthStateChanged(auth, user => {
+
       if (user) {
+
         // Usuario autenticado.
-        userNameEl.textContent = user.displayName || user.email || "Usuario";
-        userNameEl.classList.remove("d-none");
-        loginBtn.classList.add("d-none");
-        logoutBtn.classList.remove("d-none");
+        userName.textContent =
+          user.displayName ||
+          user.email ||
+          "Usuario autenticado";
 
-        // Cargar ofertas SOLO cuando Firebase confirma autenticación.
+        userName.classList.remove("d-none");
+
+        signInButton.classList.add("d-none");
+
+        signOutButton.classList.remove("d-none");
+        signOutButton.disabled = false;
+
+        // Consultar las ofertas solamente con sesión válida.
         loadOffers(user);
-      } else {
-        // Sin sesión: limpiar todo inmediatamente.
-        userNameEl.textContent = "";
-        userNameEl.classList.add("d-none");
-        loginBtn.classList.remove("d-none");
-        logoutBtn.classList.add("d-none");
 
-        clearOffers();
-        showMessage(msgAuth);
+      } else {
+
+        // Visitante: ofertas eliminadas y acceso disponible.
+        showSignedOutState();
       }
     });
+
   </script>
 
-  <script
-    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
-    integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
-    crossorigin="anonymous"
-  ></script>
 </body>
 </html>

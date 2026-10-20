@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ofertas | Pentihum Digital</title>
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+    integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+    crossorigin="anonymous"
+  />
+  <style>
+    .offer-img {
+      height: 200px;
+      object-fit: cover;
+      background-color: #f1f3f5;
+    }
+  </style>
+</head>
+<body class="bg-light">
+
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+      <span class="navbar-brand">Pentihum Digital</span>
+      <div class="ms-auto d-flex align-items-center gap-3">
+        <span id="userName" class="text-white-50 small d-none"></span>
+        <button id="loginBtn" class="btn btn-outline-light btn-sm" type="button">Iniciar sesión con Google</button>
+        <button id="logoutBtn" class="btn btn-outline-warning btn-sm d-none" type="button">Cerrar sesión</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container py-4">
+    <h1 class="h3 mb-3">Ofertas</h1>
+
+    <!-- Mensajes de estado -->
+    <div id="statusArea">
+      <div id="msgAuth" class="alert alert-info">
+        Inicia sesión con Google para ver las ofertas disponibles.
+      </div>
+      <div id="msgLoading" class="alert alert-secondary d-none">
+        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+        Cargando ofertas…
+      </div>
+      <div id="msgEmpty" class="alert alert-warning d-none">
+        No hay ofertas disponibles en este momento.
+      </div>
+      <div id="msgError" class="alert alert-danger d-none"></div>
+    </div>
+
+    <!-- Grid de ofertas -->
+    <div id="offersGrid" class="row g-4"></div>
+  </main>
+
+  <script type="module">
+    // ============================================================
+    // 1. Firebase (SDK modular vía CDN, compatible con HTML estático)
+    // ============================================================
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getAuth,
+      GoogleAuthProvider,
+      signInWithPopup,
+      signOut,
+      onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+    // Configuración web de Firebase proporcionada por el usuario.
+    const firebaseConfig = {
+      apiKey: "AIzaSyCtxAZwG9rxY7Gya518ahYSUH_LorOnNPw",
+      authDomain: "pentihum-digital.firebaseapp.com",
+      projectId: "pentihum-digital",
+      storageBucket: "pentihum-digital.firebasestorage.app",
+      messagingSenderId: "692387438680",
+      appId: "1:692387438680:web:de661bf6635b861ccf6a2d"
+    };
+
+    // URL del servicio Apps Script (termina en /exec).
+    const APPS_SCRIPT_URL =
+      "https://script.google.com/macros/s/AKfycbzHqqcXAur_4YaAxdQoG461_7fl7-u1Kid2eI9hSfB71a3FA2ZV8uXSn9QMveNZMSaOmA/exec";
+
+    const app  = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    // Proveedor Google: forzar selector de cuentas SIEMPRE.
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: "select_account" });
+
+    // ============================================================
+    // 2. Referencias DOM
+    // ============================================================
+    const loginBtn   = document.getElementById("loginBtn");
+    const logoutBtn  = document.getElementById("logoutBtn");
+    const userNameEl = document.getElementById("userName");
+
+    const msgAuth    = document.getElementById("msgAuth");
+    const msgLoading = document.getElementById("msgLoading");
+    const msgEmpty   = document.getElementById("msgEmpty");
+    const msgError   = document.getElementById("msgError");
+    const offersGrid = document.getElementById("offersGrid");
+
+    // ============================================================
+    // 3. Utilidades de UI
+    // ============================================================
+    function hideAllMessages() {
+      msgAuth.classList.add("d-none");
+      msgLoading.classList.add("d-none");
+      msgEmpty.classList.add("d-none");
+      msgError.classList.add("d-none");
+      msgError.textContent = "";
+    }
+
+    function showMessage(el, text) {
+      hideAllMessages();
+      if (text !== undefined && text !== null) el.textContent = text;
+      el.classList.remove("d-none");
+    }
+
+    function clearOffers() {
+      offersGrid.innerHTML = "";
+    }
+
+    function escapeHtml(str) {
+      return String(str == null ? "" : str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    // Construye el HTML de una tarjeta. Respeta los nombres exactos
+    // devueltos por Apps Script: Nombre, Precio, Descripcion, Imagen.
+    // Si un campo requerido no existe, no se pinta tarjeta con "undefined".
+    function buildOfferCard(offer) {
+      if (!offer || typeof offer !== "object") return null;
+
+      const nombre      = offer.Nombre;
+      const precio      = offer.Precio;
+      const descripcion = offer.Descripcion;
+      const imagen      = offer.Imagen;
+
+      // Nombre es obligatorio para renderizar; sin él, descartamos.
+      if (nombre === undefined || nombre === null || String(nombre).trim() === "") {
+        return null;
+      }
+
+      const col = document.createElement("div");
+      col.className = "col-12 col-sm-6 col-lg-4";
+
+      // Imagen: ruta relativa a index.html. Si viene vacía, no pintamos <img>.
+      let imgHtml = "";
+      if (imagen !== undefined && imagen !== null && String(imagen).trim() !== "") {
+        imgHtml = `
+          <img
+            src="${escapeHtml(imagen)}"
+            class="card-img-top offer-img"
+            alt="${escapeHtml(nombre)}"
+            loading="lazy"
+            onerror="this.style.display='none'"
+          />`;
+      }
+
+      col.innerHTML = `
+        <div class="card h-100 shadow-sm">
+          ${imgHtml}
+          <div class="card-body d-flex flex-column">
+            <h5 class="card-title">${escapeHtml(nombre)}</h5>
+            <p class="card-text text-muted flex-grow-1">${escapeHtml(descripcion)}</p>
+            <p class="card-text fw-bold fs-5 text-success mb-0">${escapeHtml(precio)}</p>
+          </div>
+        </div>
+      `;
+      return col;
+    }
+
+    // ============================================================
+    // 4. Carga de ofertas desde Apps Script
+    // ============================================================
+    async function loadOffers(user) {
+      clearOffers();
+      showMessage(msgLoading);
+
+      try {
+        // Obtener ID token de Firebase.
+        const idToken = await user.getIdToken();
+
+        // Apps Script espera el token como query string ?token=...
+        // GET sencillo, sin headers personalizados, sin credentials:
+        // evita preflight CORS y permite seguir el 302 de Apps Script.
+        const url = APPS_SCRIPT_URL + "?token=" + encodeURIComponent(idToken);
+
+        const res = await fetch(url, {
+          method: "GET",
+          redirect: "follow",
+          credentials: "omit"
+        });
+
+        // Apps Script ContentService siempre devuelve HTTP 200,
+        // incluso en errores lógicos. Por eso leemos el texto y
+        // decidimos según la forma del JSON, no según res.status.
+        const text = await res.text();
+
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch (parseErr) {
+          showMessage(
+            msgError,
+            "La respuesta del servidor no es JSON válido. Revisa la URL del servicio y su implementación."
+          );
+          return;
+        }
+
+        // Caso error: objeto con propiedad "error".
+        if (data && !Array.isArray(data) && typeof data === "object" && data.error) {
+          showMessage(msgError, "Error del servidor: " + data.error);
+          return;
+        }
+
+        // Caso éxito: array de ofertas.
+        if (!Array.isArray(data)) {
+          showMessage(
+            msgError,
+            "Estructura de respuesta inesperada. Se esperaba un array de ofertas o un objeto con 'error'."
+          );
+          return;
+        }
+
+        if (data.length === 0) {
+          showMessage(msgEmpty);
+          return;
+        }
+
+        // Renderizar tarjetas.
+        let rendered = 0;
+        const frag = document.createDocumentFragment();
+        for (const offer of data) {
+          const card = buildOfferCard(offer);
+          if (card) {
+            frag.appendChild(card);
+            rendered++;
+          }
+        }
+
+        if (rendered === 0) {
+          showMessage(
+            msgError,
+            "El servidor devolvió ofertas pero ninguna contiene los campos esperados (Nombre, Precio, Descripcion, Imagen)."
+          );
+          return;
+        }
+
+        hideAllMessages();
+        offersGrid.appendChild(frag);
+      } catch (err) {
+        showMessage(
+          msgError,
+          "No se pudieron cargar las ofertas. Detalle: " + (err && err.message ? err.message : String(err))
+        );
+      }
+    }
+
+    // ============================================================
+    // 5. Autenticación
+    // ============================================================
+    loginBtn.addEventListener("click", async () => {
+      try {
+        await signInWithPopup(auth, provider);
+      } catch (err) {
+        // Cancelaciones del usuario no son errores graves.
+        if (err && err.code === "auth/popup-closed-by-user") return;
+        showMessage(msgError, "Error al iniciar sesión: " + (err && err.message ? err.message : String(err)));
+      }
+    });
+
+    logoutBtn.addEventListener("click", async () => {
+      try {
+        await signOut(auth);
+      } catch (err) {
+        showMessage(msgError, "Error al cerrar sesión: " + (err && err.message ? err.message : String(err)));
+      }
+    });
+
+    // Observador de estado de autenticación.
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // Usuario autenticado.
+        userNameEl.textContent = user.displayName || user.email || "Usuario";
+        userNameEl.classList.remove("d-none");
+        loginBtn.classList.add("d-none");
+        logoutBtn.classList.remove("d-none");
+
+        // Cargar ofertas SOLO cuando Firebase confirma autenticación.
+        loadOffers(user);
+      } else {
+        // Sin sesión: limpiar todo inmediatamente.
+        userNameEl.textContent = "";
+        userNameEl.classList.add("d-none");
+        loginBtn.classList.remove("d-none");
+        logoutBtn.classList.add("d-none");
+
+        clearOffers();
+        showMessage(msgAuth);
+      }
+    });
+  </script>
+
+  <script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+    crossorigin="anonymous"
+  ></script>
+</body>
+</html>
